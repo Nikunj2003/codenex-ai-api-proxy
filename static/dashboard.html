@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html lang="en" id="html-root">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <meta name="theme-color" content="#8b5cf6">
+    <meta name="description" content="CODENEX-AI-PROXY-API Metrics Dashboard - Real-time monitoring and analytics">
+    <title>Metrics Dashboard - CODENEX-AI-PROXY-API</title>
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="stylesheet" href="app/styles.css">
+    <link rel="stylesheet" href="app/mobile.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+    <style>
+        /* Dashboard-specific styles */
+        .dashboard-container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .dashboard-header {
+            background: linear-gradient(135deg, #0ea5e9 0%, #8b5cf6 50%, #6366f1 100%);
+            border-bottom: none;
+            box-shadow: 0 4px 15px rgba(139, 92, 246, 0.2);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .dashboard-header-content {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .dashboard-header h1 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+        }
+
+        .dashboard-header h1 i {
+            font-size: 1.25rem;
+        }
+
+        .dashboard-header .header-logo {
+            height: 44px !important;
+            width: 44px !important;
+            min-width: 44px !important;
+            min-height: 44px !important;
+            object-fit: contain;
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+            flex-shrink: 0 !important;
+        }
+
+        .header-controls {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            color: #ffffff;
+            text-decoration: none;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 6px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            transition: var(--transition);
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        .back-link:hover {
+            color: #ffffff;
+            border-color: rgba(255, 255, 255, 0.5);
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .refresh-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 9999px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: #ffffff;
+            backdrop-filter: blur(10px);
+        }
+
+        .refresh-indicator.active {
+            color: #ffffff;
+        }
+
+        .refresh-indicator.active i {
+            animation: spin 2s linear infinite;
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .dashboard-content {
+            flex: 1;
+            padding: 1.5rem 2rem;
+            overflow-y: auto;
+            max-width: 1600px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        /* Counter Cards Grid */
+        .counter-cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .counter-card {
+            background: var(--bg-primary);
+            padding: 1.25rem;
+            border-radius: 0.5rem;
+            box-shadow: var(--shadow-md);
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            transition: var(--transition);
+        }
+
+        .counter-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .counter-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .counter-card-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 0.375rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            color: var(--primary-color);
+            background: var(--bg-tertiary);
+        }
+
+        .counter-card-icon.success { background: #d1fae5; color: #059669; }
+        .counter-card-icon.warning { background: #fef3c7; color: #f59e0b; }
+        .counter-card-icon.danger { background: #fee2e2; color: #ef4444; }
+        .counter-card-icon.info { background: #dbeafe; color: #3b82f6; }
+        .counter-card-icon.purple { background: #ede9fe; color: #7c3aed; }
+
+        .counter-card-trend {
+            font-size: 0.75rem;
+            font-weight: 500;
+            padding: 0.125rem 0.5rem;
+            border-radius: 9999px;
+        }
+
+        .counter-card-trend.up {
+            background: #d1fae5;
+            color: #059669;
+        }
+
+        .counter-card-trend.down {
+            background: #fee2e2;
+            color: #ef4444;
+        }
+
+        .counter-card-trend.neutral {
+            background: var(--bg-tertiary);
+            color: var(--text-secondary);
+        }
+
+        .counter-card-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            line-height: 1;
+        }
+
+        .counter-card-label {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        /* Charts Grid */
+        .charts-row {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .chart-card {
+            background: var(--bg-primary);
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+            box-shadow: var(--shadow-md);
+        }
+
+        .chart-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .chart-card-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .chart-card-title i {
+            color: var(--primary-color);
+        }
+
+        .chart-card-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .chart-time-select {
+            padding: 0.375rem 0.75rem;
+            border: 1px solid var(--border-color);
+            border-radius: 0.375rem;
+            font-size: 0.75rem;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            cursor: pointer;
+        }
+
+        .chart-time-select:focus {
+            outline: none;
+            border-color: var(--primary-color);
+        }
+
+        .chart-container {
+            position: relative;
+            height: 250px;
+        }
+
+        .chart-container.tall {
+            height: 300px;
+        }
+
+        /* Provider Health Timeline */
+        .timeline-container {
+            overflow-x: auto;
+        }
+
+        .timeline-chart {
+            min-width: 600px;
+        }
+
+        /* Loading and Error States */
+        .chart-loading,
+        .chart-error {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: var(--text-secondary);
+            gap: 0.5rem;
+        }
+
+        .chart-loading i {
+            font-size: 2rem;
+            animation: spin 1s linear infinite;
+        }
+
+        .chart-error i {
+            font-size: 2rem;
+            color: var(--danger-color);
+        }
+
+        .chart-error-message {
+            font-size: 0.875rem;
+        }
+
+        .chart-retry-btn {
+            margin-top: 0.5rem;
+            padding: 0.375rem 0.75rem;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 0.375rem;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .chart-retry-btn:hover {
+            background: var(--secondary-color);
+        }
+
+        /* Dark Mode Toggle */
+        .dark-mode-toggle {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: rgba(255, 255, 255, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: #ffffff;
+            transition: var(--transition);
+            backdrop-filter: blur(10px);
+        }
+
+        .dark-mode-toggle:hover {
+            color: #ffffff;
+            border-color: rgba(255, 255, 255, 0.5);
+            background: rgba(255, 255, 255, 0.25);
+        }
+
+        .dark-mode-toggle i {
+            font-size: 1rem;
+        }
+
+        /* Auto-refresh Toggle */
+        .auto-refresh-toggle {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .auto-refresh-label {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        /* Dark Mode Styles */
+        html.dark-mode {
+            --bg-primary: #1f2937;
+            --bg-secondary: #111827;
+            --bg-tertiary: #374151;
+            --text-primary: #f9fafb;
+            --text-secondary: #9ca3af;
+            --border-color: #4b5563;
+        }
+
+        html.dark-mode body {
+            background: var(--bg-secondary);
+        }
+
+        html.dark-mode .counter-card-icon {
+            background: var(--bg-tertiary);
+        }
+
+        html.dark-mode .counter-card-icon.success { background: #064e3b; color: #10b981; }
+        html.dark-mode .counter-card-icon.warning { background: #78350f; color: #fbbf24; }
+        html.dark-mode .counter-card-icon.danger { background: #7f1d1d; color: #f87171; }
+        html.dark-mode .counter-card-icon.info { background: #1e3a8a; color: #60a5fa; }
+        html.dark-mode .counter-card-icon.purple { background: #4c1d95; color: #a78bfa; }
+
+        html.dark-mode .counter-card-trend.up {
+            background: #064e3b;
+            color: #10b981;
+        }
+
+        html.dark-mode .counter-card-trend.down {
+            background: #7f1d1d;
+            color: #f87171;
+        }
+
+        /* Responsive */
+        @media (max-width: 1200px) {
+            .charts-row {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .dashboard-header-content {
+                flex-wrap: wrap;
+                gap: 1rem;
+            }
+
+            .header-controls {
+                width: 100%;
+                justify-content: space-between;
+            }
+
+            .counter-cards-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .dashboard-content {
+                padding: 1rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .counter-cards-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Header -->
+        <header class="dashboard-header">
+            <div class="dashboard-header-content">
+                <h1>
+                    <img src="/favicon.ico" alt="Logo" class="header-logo" style="width: 44px; height: 44px; min-width: 44px; min-height: 44px;">
+                    <span>Metrics Dashboard</span>
+                </h1>
+                <div class="header-controls">
+                    <a href="/" class="back-link">
+                        <i class="fas fa-arrow-left"></i>
+                        <span>Back to Console</span>
+                    </a>
+                    <div class="auto-refresh-toggle">
+                        <span class="auto-refresh-label">Auto-refresh</span>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="autoRefreshToggle" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <span class="refresh-indicator" id="refreshIndicator">
+                        <i class="fas fa-sync-alt"></i>
+                        <span id="refreshStatus">Updating...</span>
+                    </span>
+                    <button class="dark-mode-toggle" id="darkModeToggle" title="Toggle Dark Mode">
+                        <i class="fas fa-moon" id="darkModeIcon"></i>
+                        <span id="darkModeLabel">Dark</span>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="dashboard-content">
+            <!-- Counter Cards Row -->
+            <div class="counter-cards-grid">
+                <!-- Total Requests 24h -->
+                <div class="counter-card">
+                    <div class="counter-card-header">
+                        <div class="counter-card-icon info">
+                            <i class="fas fa-exchange-alt"></i>
+                        </div>
+                        <span class="counter-card-trend neutral" id="requestsTrend">
+                            <i class="fas fa-minus"></i> 0%
+                        </span>
+                    </div>
+                    <div class="counter-card-value" id="totalRequests">--</div>
+                    <div class="counter-card-label">Total Requests (24h)</div>
+                </div>
+
+                <!-- Success Rate -->
+                <div class="counter-card">
+                    <div class="counter-card-header">
+                        <div class="counter-card-icon success">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                        <span class="counter-card-trend neutral" id="successTrend">
+                            <i class="fas fa-minus"></i> 0%
+                        </span>
+                    </div>
+                    <div class="counter-card-value" id="successRate">--%</div>
+                    <div class="counter-card-label">Success Rate</div>
+                </div>
+
+                <!-- Average Latency -->
+                <div class="counter-card">
+                    <div class="counter-card-header">
+                        <div class="counter-card-icon warning">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <span class="counter-card-trend neutral" id="latencyTrend">
+                            <i class="fas fa-minus"></i> 0%
+                        </span>
+                    </div>
+                    <div class="counter-card-value" id="avgLatency">-- ms</div>
+                    <div class="counter-card-label">Avg Latency</div>
+                </div>
+
+                <!-- Active Providers -->
+                <div class="counter-card">
+                    <div class="counter-card-header">
+                        <div class="counter-card-icon">
+                            <i class="fas fa-server"></i>
+                        </div>
+                    </div>
+                    <div class="counter-card-value" id="activeProviders">--</div>
+                    <div class="counter-card-label">Active Providers</div>
+                </div>
+
+                <!-- Total Tokens 24h -->
+                <div class="counter-card">
+                    <div class="counter-card-header">
+                        <div class="counter-card-icon purple">
+                            <i class="fas fa-coins"></i>
+                        </div>
+                        <span class="counter-card-trend neutral" id="tokensTrend">
+                            <i class="fas fa-minus"></i> 0%
+                        </span>
+                    </div>
+                    <div class="counter-card-value" id="totalTokens">--</div>
+                    <div class="counter-card-label">Total Tokens (24h)</div>
+                </div>
+
+                <!-- Cache Hit Rate -->
+                <div class="counter-card">
+                    <div class="counter-card-header">
+                        <div class="counter-card-icon info">
+                            <i class="fas fa-database"></i>
+                        </div>
+                        <span class="counter-card-trend neutral" id="cacheTrend">
+                            <i class="fas fa-minus"></i> 0%
+                        </span>
+                    </div>
+                    <div class="counter-card-value" id="cacheHitRate">--%</div>
+                    <div class="counter-card-label">Cache Hit Rate</div>
+                </div>
+            </div>
+
+            <!-- Row 2: Throughput and Error Rate Charts -->
+            <div class="charts-row">
+                <!-- Request Throughput Chart -->
+                <div class="chart-card">
+                    <div class="chart-card-header">
+                        <h3 class="chart-card-title">
+                            <i class="fas fa-chart-line"></i>
+                            Request Throughput
+                        </h3>
+                        <div class="chart-card-actions">
+                            <select class="chart-time-select" id="throughputTimeRange">
+                                <option value="1h">Last 1 Hour</option>
+                                <option value="6h">Last 6 Hours</option>
+                                <option value="24h" selected>Last 24 Hours</option>
+                                <option value="7d">Last 7 Days</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="chart-container" id="throughputChartContainer">
+                        <canvas id="throughputChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Error Rate Chart -->
+                <div class="chart-card">
+                    <div class="chart-card-header">
+                        <h3 class="chart-card-title">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            Error Rate
+                        </h3>
+                        <div class="chart-card-actions">
+                            <select class="chart-time-select" id="errorTimeRange">
+                                <option value="1h">Last 1 Hour</option>
+                                <option value="6h">Last 6 Hours</option>
+                                <option value="24h" selected>Last 24 Hours</option>
+                                <option value="7d">Last 7 Days</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="chart-container" id="errorChartContainer">
+                        <canvas id="errorChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Row 3: Provider Load and Token Usage Charts -->
+            <div class="charts-row">
+                <!-- Provider Load Distribution -->
+                <div class="chart-card">
+                    <div class="chart-card-header">
+                        <h3 class="chart-card-title">
+                            <i class="fas fa-pie-chart"></i>
+                            Provider Load Distribution
+                        </h3>
+                    </div>
+                    <div class="chart-container" id="providerLoadChartContainer">
+                        <canvas id="providerLoadChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Token Usage by Model -->
+                <div class="chart-card">
+                    <div class="chart-card-header">
+                        <h3 class="chart-card-title">
+                            <i class="fas fa-chart-bar"></i>
+                            Token Usage by Model
+                        </h3>
+                        <div class="chart-card-actions">
+                            <select class="chart-time-select" id="tokenTimeRange">
+                                <option value="1h">Last 1 Hour</option>
+                                <option value="6h">Last 6 Hours</option>
+                                <option value="24h" selected>Last 24 Hours</option>
+                                <option value="7d">Last 7 Days</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="chart-container" id="tokenUsageChartContainer">
+                        <canvas id="tokenUsageChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Row 4: Health Timeline and Top Models -->
+            <div class="charts-row">
+                <!-- Provider Health Timeline -->
+                <div class="chart-card">
+                    <div class="chart-card-header">
+                        <h3 class="chart-card-title">
+                            <i class="fas fa-heartbeat"></i>
+                            Provider Health Timeline
+                        </h3>
+                        <div class="chart-card-actions">
+                            <select class="chart-time-select" id="healthTimeRange">
+                                <option value="1h">Last 1 Hour</option>
+                                <option value="6h">Last 6 Hours</option>
+                                <option value="24h" selected>Last 24 Hours</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="chart-container tall timeline-container" id="healthTimelineChartContainer">
+                        <canvas id="healthTimelineChart" class="timeline-chart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Top Models -->
+                <div class="chart-card">
+                    <div class="chart-card-header">
+                        <h3 class="chart-card-title">
+                            <i class="fas fa-trophy"></i>
+                            Top Models
+                        </h3>
+                    </div>
+                    <div class="chart-container tall" id="topModelsChartContainer">
+                        <canvas id="topModelsChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div id="toastContainer" class="toast-container"></div>
+
+    <!-- Scripts -->
+    <script type="module" src="app/auth.js"></script>
+    <script type="module">
+        // Import auth functions
+        import { initAuth } from './app/auth.js';
+
+        // Check login status on page load
+        (async function() {
+            const isAuthenticated = await initAuth();
+            if (!isAuthenticated) {
+                return;
+            }
+            console.log('User authenticated');
+        })();
+    </script>
+    <script type="module" src="app/charts.js"></script>
+    <script type="module" src="app/dashboard.js"></script>
+</body>
+</html>

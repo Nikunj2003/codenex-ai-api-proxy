@@ -1,0 +1,903 @@
+<!DOCTYPE html>
+<html lang="en" id="html-root">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <meta name="theme-color" content="#8b5cf6">
+    <meta name="description" content="CODENEX-AI-PROXY-API Management Console - Unified management of AI service providers">
+    <title>CODENEX-AI-PROXY-API - Management Console</title>
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="stylesheet" href="app/styles.css">
+    <link rel="stylesheet" href="app/mobile.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Swagger UI CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/swagger-ui-dist@5.9.0/swagger-ui.css">
+    <!-- Chart.js for Dashboard -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <h1><img src="/favicon.ico" alt="Logo" class="header-logo" style="width: 64px !important; height: 64px !important; min-width: 64px !important; min-height: 64px !important; max-width: 64px !important; max-height: 64px !important;"> <span class="header-title">CODENEX-AI-PROXY-API Management Console</span></h1>
+                <div class="header-controls">
+                    <span class="status-badge" id="serverStatus">
+                        <i class="fas fa-circle"></i> <span class="status-text">Connecting...</span>
+                    </span>
+                    <button id="logoutBtn" class="logout-btn" title="Logout">
+                        <i class="fas fa-sign-out-alt"></i> <span>Logout</span>
+                    </button>
+                    </span>
+                    <button id="restartBtn" class="logout-btn" aria-label="Restart Service">
+                        <i id="restartBtnIcon" class="fas fa-redo"></i> <span id="restartBtnText" class="btn-text">Restart</span>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Sidebar -->
+            <aside class="sidebar" role="navigation" aria-label="Main Navigation">
+                <nav class="sidebar-nav">
+                    <a href="#dashboard" class="nav-item active" data-section="dashboard" aria-label="Metrics Dashboard">
+                        <i class="fas fa-tachometer-alt" aria-hidden="true"></i> <span>Dashboard</span>
+                    </a>
+                    <a href="#providers" class="nav-item" data-section="providers" aria-label="Provider Pool Management">
+                        <i class="fas fa-network-wired" aria-hidden="true"></i> <span>Provider Pools</span>
+                    </a>
+                    <a href="#config" class="nav-item" data-section="config" aria-label="Config Management">
+                        <i class="fas fa-cog" aria-hidden="true"></i> <span>Configuration</span>
+                    </a>
+                    <a href="#upload-config" class="nav-item" data-section="upload-config" aria-label="Config Files Management">
+                        <i class="fas fa-upload" aria-hidden="true"></i> <span>Config Files</span>
+                    </a>
+                    <a href="#usage" class="nav-item" data-section="usage" aria-label="Usage Query">
+                        <i class="fas fa-chart-bar" aria-hidden="true"></i> <span>Usage Query</span>
+                    </a>
+                    <a href="#logs" class="nav-item" data-section="logs" aria-label="Real-time Logs">
+                        <i class="fas fa-file-alt" aria-hidden="true"></i> <span>Real-time Logs</span>
+                    </a>
+                    <a href="#api-docs" class="nav-item" data-section="api-docs" aria-label="API Documentation">
+                        <i class="fas fa-book" aria-hidden="true"></i> <span>API Docs</span>
+                    </a>
+                </nav>
+            </aside>
+
+            <!-- Content Area -->
+            <main class="content" role="main">
+                <!-- Configuration Section -->
+                <section id="config" class="section" aria-labelledby="config-title">
+                    <h2 id="config-title">Configuration</h2>
+                    <div class="config-panel">
+                        <div class="config-form">
+                            <div class="form-group password-input-group">
+                                <label for="apiKey">API Key</label>
+                                <div class="password-input-wrapper">
+                                    <input type="password" id="apiKey" class="form-control" placeholder="Enter API key" autocomplete="off">
+                                    <button type="button" class="password-toggle" data-target="apiKey" aria-label="Show/Hide Password">
+                                        <i class="fas fa-eye" aria-hidden="true"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="host">Listen Address</label>
+                                    <input type="text" id="host" class="form-control" value="127.0.0.1">
+                                </div>
+                                <div class="form-group">
+                                    <label for="port">Port</label>
+                                    <input type="number" id="port" class="form-control" value="3000">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="modelProvider">Model Provider</label>
+                                <select id="modelProvider" class="form-control">
+                                    <option value="gemini-cli-oauth">Gemini CLI OAuth</option>
+                                    <option value="gemini-antigravity">Gemini Antigravity</option>
+                                    <option value="openai-custom">OpenAI Custom</option>
+                                    <option value="claude-custom">Claude Custom</option>
+                                    <option value="openaiResponses-custom">OpenAI Responses</option>
+                                </select>
+                            </div>
+
+                            <!-- Gemini CLI OAuth Config -->
+                            <div class="provider-config" data-provider="gemini-cli-oauth">
+                                <div class="form-group">
+                                    <label for="geminiBaseUrl"><span>Gemini Base URL</span> <span class="optional-tag">(Optional)</span></label>
+                                    <input type="text" id="geminiBaseUrl" class="form-control" placeholder="https://cloudcode-pa.googleapis.com">
+                                </div>
+                                <div class="form-group">
+                                    <label for="projectId"><span>Project ID</span> <span class="optional-tag">(Optional)</span></label>
+                                    <input type="text" id="projectId" class="form-control" placeholder="Google Cloud Project ID">
+                                </div>
+                                <div class="form-group">
+                                    <label>OAuth Credentials</label>
+                                    <div class="radio-group">
+                                        <label class="radio-label">
+                                            <input type="radio" name="geminiCredsType" value="file" checked>
+                                            <span>File Path</span>
+                                        </label>
+                                        <label class="radio-label">
+                                            <input type="radio" name="geminiCredsType" value="base64">
+                                            <span>Base64 Encoded</span>
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="form-group" id="geminiCredsBase64Group">
+                                    <label for="geminiOauthCredsBase64">OAuth Credentials (Base64)</label>
+                                    <textarea id="geminiOauthCredsBase64" class="form-control" rows="3" placeholder="Enter Base64 encoded OAuth credentials"></textarea>
+                                </div>
+                                <div class="form-group" id="geminiCredsFileGroup" style="display: none;">
+                                    <label for="geminiOauthCredsFilePath">OAuth Credentials File Path</label>
+                                    <div class="file-input-group">
+                                        <input type="text" id="geminiOauthCredsFilePath" class="form-control" placeholder="e.g.: ~/.gemini/oauth_creds.json">
+                                        <button type="button" class="btn btn-outline upload-btn" data-target="geminiOauthCredsFilePath" title="Upload File" aria-label="Upload File">
+                                            <i class="fas fa-upload"></i>
+                                        </button>
+                                        <button type="button" class="btn btn-outline generate-creds-btn" data-target="geminiOauthCredsFilePath" data-provider="gemini-cli-oauth" title="Generate Credentials File">
+                                            <i class="fas fa-magic"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Gemini Antigravity Config -->
+                            <div class="provider-config" data-provider="gemini-antigravity" style="display: none;">
+                                <div class="form-group">
+                                    <label for="antigravityBaseUrlDaily"><span>Daily Base URL</span> <span class="optional-tag">(Optional)</span></label>
+                                    <input type="text" id="antigravityBaseUrlDaily" class="form-control" placeholder="https://daily-cloudcode-pa.sandbox.googleapis.com">
+                                </div>
+                                <div class="form-group">
+                                    <label for="antigravityBaseUrlAutopush"><span>Autopush Base URL</span> <span class="optional-tag">(Optional)</span></label>
+                                    <input type="text" id="antigravityBaseUrlAutopush" class="form-control" placeholder="https://autopush-cloudcode-pa.sandbox.googleapis.com">
+                                </div>
+                                <div class="form-group">
+                                    <label for="antigravityOauthCredsFilePath">OAuth Credentials File Path</label>
+                                    <div class="file-input-group">
+                                        <input type="text" id="antigravityOauthCredsFilePath" class="form-control" placeholder="e.g.: ~/.antigravity/oauth_creds.json">
+                                        <button type="button" class="btn btn-outline upload-btn" data-target="antigravityOauthCredsFilePath" title="Upload File" aria-label="Upload File">
+                                            <i class="fas fa-upload"></i>
+                                        </button>
+                                        <button type="button" class="btn btn-outline generate-creds-btn" data-target="antigravityOauthCredsFilePath" data-provider="gemini-antigravity" title="Generate Credentials File">
+                                            <i class="fas fa-magic"></i>
+                                        </button>
+                                    </div>
+                                    <small class="form-text">Antigravity uses Google OAuth authentication, requires credentials file path</small>
+                                </div>
+                            </div>
+
+                            <!-- OpenAI Custom Config -->
+                            <div class="provider-config" data-provider="openai-custom" style="display: none;">
+                                <div class="form-group password-input-group">
+                                    <label for="openaiApiKey">OpenAI API Key</label>
+                                    <div class="password-input-wrapper">
+                                        <input type="password" id="openaiApiKey" class="form-control" placeholder="sk-...">
+                                        <button type="button" class="password-toggle" data-target="openaiApiKey">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label for="openaiBaseUrl">OpenAI Base URL</label>
+                                    <input type="text" id="openaiBaseUrl" class="form-control" value="https://api.openai.com/v1" placeholder="e.g.: https://api.openai.com/v1">
+                                </div>
+                            </div>
+
+                            <!-- Claude Custom Config -->
+                            <div class="provider-config" data-provider="claude-custom" style="display: none;">
+                                <div class="form-group password-input-group">
+                                    <label for="claudeApiKey">Claude API Key</label>
+                                    <div class="password-input-wrapper">
+                                        <input type="password" id="claudeApiKey" class="form-control" placeholder="sk-ant-...">
+                                        <button type="button" class="password-toggle" data-target="claudeApiKey">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label for="claudeBaseUrl">Claude Base URL</label>
+                                    <input type="text" id="claudeBaseUrl" class="form-control" value="https://api.anthropic.com" placeholder="e.g.: https://api.anthropic.com">
+                                </div>
+                            </div>
+
+
+                            <!-- OpenAI Responses Config -->
+                            <div class="provider-config" data-provider="openaiResponses-custom" style="display: none;">
+                                <div class="form-group password-input-group">
+                                    <label for="openaiResponsesApiKey">OpenAI API Key</label>
+                                    <div class="password-input-wrapper">
+                                        <input type="password" id="openaiResponsesApiKey" class="form-control" placeholder="sk-...">
+                                        <button type="button" class="password-toggle" data-target="openaiResponsesApiKey">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label for="openaiResponsesBaseUrl">OpenAI Base URL</label>
+                                    <input type="text" id="openaiResponsesBaseUrl" class="form-control" value="https://api.openai.com/v1" placeholder="e.g.: https://api.openai.com/v1">
+                                </div>
+                            </div>
+
+                            <!-- Advanced Config Section -->
+                            <div class="advanced-config-section">
+                                <h3><i class="fas fa-cogs"></i> Advanced Configuration</h3>
+
+                                <div class="config-row">
+                                    <div class="form-group">
+                                        <label for="systemPromptFilePath">System Prompt File Path</label>
+                                        <input type="text" id="systemPromptFilePath" class="form-control" value="configs/input_system_prompt.txt" placeholder="e.g.: configs/input_system_prompt.txt">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="systemPromptMode">System Prompt Mode</label>
+                                        <select id="systemPromptMode" class="form-control">
+                                            <option value="append" selected>Append</option>
+                                            <option value="overwrite">Overwrite</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="config-row">
+                                    <div class="form-group">
+                                        <label for="promptLogBaseName">Prompt Log Base Name</label>
+                                        <input type="text" id="promptLogBaseName" class="form-control" placeholder="e.g.: prompt_log">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="promptLogMode">Prompt Log Mode</label>
+                                        <select id="promptLogMode" class="form-control">
+                                            <option value="none">None</option>
+                                            <option value="console">Console</option>
+                                            <option value="file">File</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="config-row">
+                                    <div class="form-group">
+                                        <label for="requestMaxRetries">Max Retries</label>
+                                        <input type="number" id="requestMaxRetries" class="form-control" min="0" max="10" value="3">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="requestBaseDelay">Base Retry Delay (ms)</label>
+                                        <input type="number" id="requestBaseDelay" class="form-control" min="0" step="100" value="1000">
+                                    </div>
+                                </div>
+
+                                <div class="config-row">
+                                    <div class="form-group">
+                                        <label for="cronNearMinutes">OAuth Token Refresh Interval (minutes)</label>
+                                        <input type="number" id="cronNearMinutes" class="form-control" min="1" max="60" value="1">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="cronNearMinutes">Enable Auto Token Refresh (requires restart)</label>
+                                        <label class="toggle-switch">
+                                            <input type="checkbox" id="cronRefreshToken">
+                                            <span class="toggle-slider"></span>
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <div class="form-group pool-section">
+                                    <label for="providerPoolsFilePath">Provider Pool Config Path (cannot be empty)</label>
+                                    <input type="text" id="providerPoolsFilePath" class="form-control" value="" placeholder="Default: configs/provider_pools.json">
+                                    <small class="form-text">When provider pool is configured, it will be used by default. Falls back to default config when pool config fails</small>
+                                </div>
+
+                                <div class="form-group pool-section">
+                                    <label for="maxErrorCount">Max Error Count</label>
+                                    <input type="number" id="maxErrorCount" class="form-control" value="3" min="1" max="10" placeholder="Default: 3">
+                                    <small class="form-text">Provider will be marked as unhealthy after reaching this consecutive error count, default is 3</small>
+                                </div>
+
+                                <div class="form-group pool-section">
+                                    <label for="providerFallbackChain">Fallback Chain Config</label>
+                                    <textarea id="providerFallbackChain" class="form-control" rows="6" placeholder='Example:
+{
+  "gemini-cli-oauth": ["gemini-antigravity"],
+  "gemini-antigravity": ["gemini-cli-oauth"]
+}'></textarea>
+                                    <small class="form-text">When all accounts of a Provider Type are unhealthy, automatically switch to configured Fallback type. JSON format, key is primary type, value is Fallback type array (sorted by priority)</small>
+                                </div>
+
+                                <!-- Auto Health Check Config -->
+                                <div class="form-group pool-section">
+                                    <label>Auto Health Check</label>
+                                    <div class="checkbox-group" style="margin-bottom: 10px;">
+                                        <label class="checkbox-label">
+                                            <input type="checkbox" id="autoHealthCheckEnabled" checked>
+                                            <span>Enable Auto Health Check</span>
+                                        </label>
+                                    </div>
+                                    <small class="form-text">Automatically schedule health checks for unhealthy providers based on error type</small>
+                                </div>
+
+                                <div class="form-group pool-section">
+                                    <label for="quickRetryIntervalSeconds">Quick Retry Interval (seconds)</label>
+                                    <input type="number" id="quickRetryIntervalSeconds" class="form-control" value="10" min="5" max="300" placeholder="Default: 10">
+                                    <small class="form-text">Seconds between quick retries for non-rate-limit errors (default: 10)</small>
+                                </div>
+
+                                <div class="form-group pool-section">
+                                    <label for="quickRetryMaxCount">Quick Retry Max Count</label>
+                                    <input type="number" id="quickRetryMaxCount" class="form-control" value="3" min="1" max="10" placeholder="Default: 3">
+                                    <small class="form-text">Maximum quick retry attempts before switching to standard interval (default: 3)</small>
+                                </div>
+
+                                <div class="form-group pool-section">
+                                    <label for="rateLimitCheckIntervalHours">Rate Limit (429) Check Interval (hours)</label>
+                                    <input type="number" id="rateLimitCheckIntervalHours" class="form-control" value="3" min="0.5" max="24" step="0.5" placeholder="Default: 3">
+                                    <small class="form-text">Hours before retrying rate-limited (429) providers (default: 3)</small>
+                                </div>
+
+                                <div class="form-group pool-section">
+                                    <label for="standardCheckIntervalHours">Standard Check Interval (hours)</label>
+                                    <input type="number" id="standardCheckIntervalHours" class="form-control" value="3" min="0.5" max="24" step="0.5" placeholder="Default: 3">
+                                    <small class="form-text">Hours for standard health checks after quick retries exhausted (default: 3)</small>
+                                </div>
+
+                                <!-- System Prompt Config at bottom -->
+                                <div class="form-group system-prompt-section">
+                                    <label for="systemPrompt">System Prompt</label>
+                                    <textarea id="systemPrompt" class="form-control" rows="4" placeholder="Enter system prompt..."></textarea>
+                                </div>
+
+                                <!-- Admin Password Config -->
+                                <div class="form-group pool-section">
+                                    <label for="adminPassword">Admin Password</label>
+                                    <div class="password-input-wrapper">
+                                        <input type="password" id="adminPassword" class="form-control" placeholder="Set admin password (leave empty to keep unchanged)" autocomplete="new-password">
+                                        <button type="button" class="password-toggle" data-target="adminPassword" aria-label="Show/Hide Password">
+                                            <i class="fas fa-eye" aria-hidden="true"></i>
+                                        </button>
+                                    </div>
+                                    <small class="form-text">Protects access to the management console, requires re-login after modification</small>
+                                </div>
+                            </div>
+
+                            <div class="form-actions">
+                                <button class="btn btn-success" id="saveConfig">
+                                    <i class="fas fa-save"></i> <span>Save Configuration</span>
+                                </button>
+                                <button class="btn btn-secondary" id="resetConfig">
+                                    <i class="fas fa-undo"></i> <span>Reset</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Config Files Section -->
+                <section id="upload-config" class="section" aria-labelledby="upload-config-title">
+                    <h2 id="upload-config-title">Config Files</h2>
+                    <div class="upload-config-panel">
+                        <!-- Search and Filter Area -->
+                        <div class="config-search-panel">
+                            <div class="search-controls">
+                                <div class="form-group">
+                                    <label for="configSearch">Search Config</label>
+                                    <div class="search-input-group">
+                                        <input type="text" id="configSearch" class="form-control" placeholder="Enter filename">
+                                        <button type="button" class="btn btn-outline" id="searchConfigBtn" aria-label="Search Config">
+                                            <i class="fas fa-search"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label for="configStatusFilter">Status Filter</label>
+                                    <select id="configStatusFilter" class="form-control">
+                                        <option value="">All</option>
+                                        <option value="used">Associated</option>
+                                        <option value="unused">Not Associated</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>&nbsp;</label>
+                                    <div class="config-actions">
+                                        <button class="btn btn-outline" id="refreshConfigList" aria-label="Refresh Config List">
+                                            <i class="fas fa-sync-alt"></i> <span>Refresh</span>
+                                        </button>
+                                        <button class="btn btn-outline" id="downloadAllConfigs" aria-label="Download All Configs">
+                                            <i class="fas fa-file-archive"></i> <span>Download All (ZIP)</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Config List -->
+                        <div class="config-list-container">
+                            <div class="config-list-header">
+                                <h3>Config File List</h3>
+                                <div class="config-stats">
+                                    <span id="configCount">Total: 0 config files</span>
+                                    <span id="usedConfigCount" class="status-used">Associated: 0</span>
+                                    <span id="unusedConfigCount" class="status-unused">Not Associated: 0</span>
+                                    <button id="batchLinkOAuthBtn" class="btn-batch-link" title="Batch link unassociated configs under configs/">
+                                        <i class="fas fa-link"></i> <span>Auto Link OAuth</span>
+                                    </button>
+                                </div>
+                            </div>
+                            <div id="configList" class="config-list">
+                                <!-- Config file list will be dynamically generated here -->
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Provider Pools Section -->
+                <section id="providers" class="section" aria-labelledby="providers-title">
+                    <h2 id="providers-title">Provider Pools</h2>
+                    <div class="pool-description">
+                        <div class="highlight-note">
+                            <i class="fas fa-info-circle"></i>
+                            <span>When provider pool is configured, it will be used by default. Falls back to default config when pool config fails</span>
+                        </div>
+                    </div>
+                    <!-- Provider Pool Stats -->
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-icon">
+                                <i class="fas fa-server"></i>
+                            </div>
+                            <div class="stat-info">
+                                <h3 id="activeConnections">0</h3>
+                                <p>Active Connections</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">
+                                <i class="fas fa-network-wired"></i>
+                            </div>
+                            <div class="stat-info">
+                                <h3 id="activeProviders">0</h3>
+                                <p>Active Providers</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">
+                                <i class="fas fa-check-circle"></i>
+                            </div>
+                            <div class="stat-info">
+                                <h3 id="healthyProviders">0</h3>
+                                <p>Healthy Providers</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="providers-container">
+                        <div id="providersList" class="providers-list">
+                            <!-- Providers will be loaded here -->
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Usage Section -->
+                <section id="usage" class="section" aria-labelledby="usage-title">
+                    <h2 id="usage-title">Usage Query</h2>
+                    <div class="usage-panel">
+                        <div class="usage-controls">
+                            <button class="btn btn-primary" id="refreshUsageBtn" aria-label="Refresh Usage">
+                                <i class="fas fa-sync-alt"></i> <span>Refresh Usage</span>
+                            </button>
+                            <span class="usage-last-update" id="usageLastUpdate">Last Update: --</span>
+                        </div>
+
+                        <div class="usage-loading" id="usageLoading" style="display: none;">
+                            <i class="fas fa-spinner fa-spin"></i> <span>Loading usage data...</span>
+                        </div>
+
+                        <div class="usage-error" id="usageError" style="display: none;">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <span id="usageErrorMessage"></span>
+                        </div>
+
+                        <div class="usage-content" id="usageContent">
+                            <!-- Usage data will be dynamically generated here -->
+                            <div class="usage-empty" id="usageEmpty">
+                                <i class="fas fa-chart-bar"></i>
+                                <p>Click "Refresh Usage" to get usage information</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Logs Section -->
+                <section id="logs" class="section" aria-labelledby="logs-title">
+                    <h2 id="logs-title">Real-time Logs</h2>
+                    <div class="logs-controls">
+                        <button class="btn btn-danger" id="clearLogs" aria-label="Clear All Logs">
+                            <i class="fas fa-trash" aria-hidden="true"></i> <span>Clear Logs</span>
+                        </button>
+                        <button class="btn btn-primary" id="toggleAutoScroll" data-enabled="true" aria-label="Toggle Auto-scroll">
+                            <i class="fas fa-arrow-down" aria-hidden="true"></i> <span>Auto Scroll: On</span>
+                        </button>
+                    </div>
+                    <div class="logs-container" id="logsContainer" role="log" aria-live="polite" aria-atomic="false">
+                        <!-- Logs will appear here -->
+                    </div>
+                </section>
+
+                <!-- API Documentation Section -->
+                <section id="api-docs" class="section" aria-labelledby="api-docs-title">
+                    <h2 id="api-docs-title">API Documentation</h2>
+                    <div class="api-docs-container">
+                        <div id="swagger-ui"></div>
+                    </div>
+                </section>
+
+                <!-- Metrics Dashboard Section -->
+                <section id="dashboard" class="section active" aria-labelledby="dashboard-title">
+                    <h2 id="dashboard-title">Metrics Dashboard</h2>
+
+                    <!-- Dashboard Controls -->
+                    <div class="dashboard-controls">
+                        <div class="auto-refresh-toggle">
+                            <span class="auto-refresh-label">Auto-refresh</span>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="dashboardAutoRefresh" checked>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                        <span class="refresh-indicator" id="dashboardRefreshIndicator">
+                            <i class="fas fa-sync-alt"></i>
+                            <span id="dashboardRefreshStatus">Ready</span>
+                        </span>
+                    </div>
+
+                    <!-- System Info Bar -->
+                    <div class="system-info-bar">
+                        <span><i class="fas fa-clock"></i> Uptime: <span id="dashUptime">--</span></span>
+                        <span><i class="fas fa-memory"></i> Memory: <span id="dashMemory">--</span></span>
+                        <span><i class="fas fa-microchip"></i> CPU: <span id="dashCpu">--</span>%</span>
+                        <span><i class="fas fa-code-branch"></i> Version: <span id="dashVersion">--</span></span>
+                    </div>
+
+                    <!-- Counter Cards Grid -->
+                    <div class="stats-grid dashboard-stats">
+                        <!-- Total Requests 24h -->
+                        <div class="stat-card">
+                            <div class="stat-icon info">
+                                <i class="fas fa-exchange-alt"></i>
+                            </div>
+                            <div class="stat-info">
+                                <h3 id="dashTotalRequests">--</h3>
+                                <p>Requests (24h)</p>
+                            </div>
+                            <span class="stat-trend neutral" id="dashRequestsTrend">
+                                <i class="fas fa-minus"></i> 0%
+                            </span>
+                        </div>
+
+                        <!-- Success Rate -->
+                        <div class="stat-card">
+                            <div class="stat-icon success">
+                                <i class="fas fa-check-circle"></i>
+                            </div>
+                            <div class="stat-info">
+                                <h3 id="dashSuccessRate">--%</h3>
+                                <p>Success Rate</p>
+                            </div>
+                            <span class="stat-trend neutral" id="dashSuccessTrend">
+                                <i class="fas fa-minus"></i> 0%
+                            </span>
+                        </div>
+
+                        <!-- Average Latency -->
+                        <div class="stat-card">
+                            <div class="stat-icon warning">
+                                <i class="fas fa-clock"></i>
+                            </div>
+                            <div class="stat-info">
+                                <h3 id="dashAvgLatency">-- ms</h3>
+                                <p>Avg Latency</p>
+                            </div>
+                            <span class="stat-trend neutral" id="dashLatencyTrend">
+                                <i class="fas fa-minus"></i> 0%
+                            </span>
+                        </div>
+
+                        <!-- Active Providers -->
+                        <div class="stat-card">
+                            <div class="stat-icon">
+                                <i class="fas fa-server"></i>
+                            </div>
+                            <div class="stat-info">
+                                <h3 id="dashActiveProviders">--</h3>
+                                <p>Active Providers</p>
+                            </div>
+                        </div>
+
+                        <!-- Total Tokens 24h -->
+                        <div class="stat-card">
+                            <div class="stat-icon purple">
+                                <i class="fas fa-coins"></i>
+                            </div>
+                            <div class="stat-info">
+                                <h3 id="dashTotalTokens">--</h3>
+                                <p>Tokens (24h)</p>
+                            </div>
+                            <span class="stat-trend neutral" id="dashTokensTrend">
+                                <i class="fas fa-minus"></i> 0%
+                            </span>
+                        </div>
+
+                        <!-- Cache Hit Rate -->
+                        <div class="stat-card">
+                            <div class="stat-icon info">
+                                <i class="fas fa-database"></i>
+                            </div>
+                            <div class="stat-info">
+                                <h3 id="dashCacheHitRate">--%</h3>
+                                <p>Cache Hit Rate</p>
+                            </div>
+                            <span class="stat-trend neutral" id="dashCacheTrend">
+                                <i class="fas fa-minus"></i> 0%
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Charts Row 1: Throughput and Error Rate -->
+                    <div class="charts-row">
+                        <div class="chart-card">
+                            <div class="chart-card-header">
+                                <h3 class="chart-card-title">
+                                    <i class="fas fa-chart-line"></i>
+                                    Request Throughput
+                                </h3>
+                                <div class="chart-card-actions">
+                                    <select class="chart-time-select" id="dashThroughputRange">
+                                        <option value="1h">Last 1 Hour</option>
+                                        <option value="6h">Last 6 Hours</option>
+                                        <option value="24h" selected>Last 24 Hours</option>
+                                        <option value="7d">Last 7 Days</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="chart-container" id="dashThroughputContainer">
+                                <canvas id="dashThroughputChart"></canvas>
+                            </div>
+                        </div>
+
+                        <div class="chart-card">
+                            <div class="chart-card-header">
+                                <h3 class="chart-card-title">
+                                    <i class="fas fa-exclamation-triangle"></i>
+                                    Error Rate
+                                </h3>
+                                <div class="chart-card-actions">
+                                    <select class="chart-time-select" id="dashErrorRange">
+                                        <option value="1h">Last 1 Hour</option>
+                                        <option value="6h">Last 6 Hours</option>
+                                        <option value="24h" selected>Last 24 Hours</option>
+                                        <option value="7d">Last 7 Days</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="chart-container" id="dashErrorContainer">
+                                <canvas id="dashErrorChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Charts Row 2: Provider Load and Token Usage -->
+                    <div class="charts-row">
+                        <div class="chart-card">
+                            <div class="chart-card-header">
+                                <h3 class="chart-card-title">
+                                    <i class="fas fa-pie-chart"></i>
+                                    Provider Load
+                                </h3>
+                            </div>
+                            <div class="chart-container" id="dashProviderLoadContainer">
+                                <canvas id="dashProviderLoadChart"></canvas>
+                            </div>
+                        </div>
+
+                        <div class="chart-card">
+                            <div class="chart-card-header">
+                                <h3 class="chart-card-title">
+                                    <i class="fas fa-chart-bar"></i>
+                                    Token Usage by Model
+                                </h3>
+                                <div class="chart-card-actions">
+                                    <select class="chart-time-select" id="dashTokenRange">
+                                        <option value="1h">Last 1 Hour</option>
+                                        <option value="6h">Last 6 Hours</option>
+                                        <option value="24h" selected>Last 24 Hours</option>
+                                        <option value="7d">Last 7 Days</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="chart-container" id="dashTokenUsageContainer">
+                                <canvas id="dashTokenUsageChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Charts Row 3: Health Timeline and Top Models -->
+                    <div class="charts-row">
+                        <div class="chart-card">
+                            <div class="chart-card-header">
+                                <h3 class="chart-card-title">
+                                    <i class="fas fa-heartbeat"></i>
+                                    Provider Health Timeline
+                                </h3>
+                                <div class="chart-card-actions">
+                                    <select class="chart-time-select" id="dashHealthRange">
+                                        <option value="1h">Last 1 Hour</option>
+                                        <option value="6h">Last 6 Hours</option>
+                                        <option value="24h" selected>Last 24 Hours</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="chart-container tall" id="dashHealthContainer">
+                                <canvas id="dashHealthChart"></canvas>
+                            </div>
+                        </div>
+
+                        <div class="chart-card">
+                            <div class="chart-card-header">
+                                <h3 class="chart-card-title">
+                                    <i class="fas fa-trophy"></i>
+                                    Top Models
+                                </h3>
+                            </div>
+                            <div class="chart-container tall" id="dashTopModelsContainer">
+                                <canvas id="dashTopModelsChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+            </main>
+        </div>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div id="toastContainer" class="toast-container"></div>
+
+    <!-- Scripts -->
+    <script type="module" src="app/auth.js"></script>
+    <script type="module">
+        // Import auth functions
+        import { initAuth, logout } from './app/auth.js';
+
+        // Check login status on page load
+        (async function() {
+            const isAuthenticated = await initAuth();
+            if (!isAuthenticated) {
+                // If not authenticated, initAuth will automatically redirect to login page
+                return;
+            }
+            // Authentication successful, continue loading page
+            console.log('User authenticated');
+
+            // Show logout button (if password protection is configured)
+            const logoutBtn = document.getElementById('logoutBtn');
+            if (logoutBtn && localStorage.getItem('authToken')) {
+                logoutBtn.style.display = 'inline-block';
+                logoutBtn.addEventListener('click', async () => {
+                    if (confirm('Are you sure you want to logout?')) {
+                        await logout();
+                    }
+                });
+            }
+        })();
+
+        // Export to window for other scripts to use
+        window.initAuth = initAuth;
+        window.logout = logout;
+    </script>
+    <script type="module" src="app/app.js"></script>
+    <script type="module" src="app/charts.js"></script>
+    <script type="module">
+        // Dashboard initialization for integrated mode
+        import { initDashboard, cleanupDashboard, state as dashboardState } from './app/dashboard.js';
+
+        let dashboardInitialized = false;
+
+        // Initialize dashboard when the section becomes visible
+        function checkAndInitDashboard() {
+            const dashboardSection = document.getElementById('dashboard');
+            if (dashboardSection && dashboardSection.classList.contains('active')) {
+                if (!dashboardInitialized) {
+                    initDashboard();
+                    dashboardInitialized = true;
+                }
+            }
+        }
+
+        // Listen for navigation to dashboard section
+        document.addEventListener('click', function(e) {
+            const navItem = e.target.closest('.nav-item');
+            if (navItem) {
+                if (navItem.dataset.section === 'dashboard') {
+                    setTimeout(checkAndInitDashboard, 100);
+                }
+            }
+        });
+
+        // Also check on page load if dashboard is the active section
+        document.addEventListener('DOMContentLoaded', function() {
+            const dashboardSection = document.getElementById('dashboard');
+            if (dashboardSection && dashboardSection.classList.contains('active')) {
+                setTimeout(checkAndInitDashboard, 200);
+            }
+        });
+    </script>
+
+    <!-- Swagger UI -->
+    <script src="https://unpkg.com/swagger-ui-dist@5.9.0/swagger-ui-bundle.js"></script>
+    <script src="https://unpkg.com/swagger-ui-dist@5.9.0/swagger-ui-standalone-preset.js"></script>
+    <script>
+        // Initialize Swagger UI when the API Docs section becomes visible
+        let swaggerInitialized = false;
+
+        function initSwaggerUI() {
+            if (swaggerInitialized) return;
+
+            const swaggerContainer = document.getElementById('swagger-ui');
+            if (!swaggerContainer) return;
+
+            // Get current URL origin for the server
+            const serverUrl = window.location.origin;
+
+            // Get session token from localStorage
+            const authToken = localStorage.getItem('authToken');
+
+            window.ui = SwaggerUIBundle({
+                url: serverUrl + '/openapi.json',
+                dom_id: '#swagger-ui',
+                deepLinking: true,
+                presets: [
+                    SwaggerUIBundle.presets.apis,
+                    SwaggerUIStandalonePreset
+                ],
+                plugins: [
+                    SwaggerUIBundle.plugins.DownloadUrl
+                ],
+                layout: "StandaloneLayout",
+                docExpansion: 'list',
+                filter: true,
+                showExtensions: true,
+                showCommonExtensions: true,
+                tryItOutEnabled: true,
+                persistAuthorization: true,
+                displayRequestDuration: true,
+                requestInterceptor: (req) => {
+                    const url = new URL(req.url);
+                    // Use session token for management endpoints (/api/*)
+                    if (url.pathname.startsWith('/api/')) {
+                        const sessionToken = localStorage.getItem('authToken');
+                        if (sessionToken) {
+                            req.headers['Authorization'] = 'Bearer ' + sessionToken;
+                        }
+                    }
+                    // For other endpoints, use whatever is set in Swagger Authorize dialog
+                    return req;
+                }
+            });
+
+            swaggerInitialized = true;
+            console.log('Swagger UI initialized');
+        }
+
+        // Initialize when navigating to API Docs section
+        document.addEventListener('click', function(e) {
+            const navItem = e.target.closest('.nav-item');
+            if (navItem && navItem.dataset.section === 'api-docs') {
+                setTimeout(initSwaggerUI, 100);
+            }
+        });
+
+        // Also check on page load if API Docs is the active section
+        document.addEventListener('DOMContentLoaded', function() {
+            const apiDocsSection = document.getElementById('api-docs');
+            if (apiDocsSection && apiDocsSection.classList.contains('active')) {
+                initSwaggerUI();
+            }
+        });
+    </script>
+</body>
+</html>

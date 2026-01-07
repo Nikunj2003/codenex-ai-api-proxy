@@ -1,0 +1,2341 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "CODENEX-AI-PROXY-API",
+    "description": "Unified API proxy supporting OpenAI, Claude, and Gemini model providers with provider pool management, automatic failover, and OAuth authentication.",
+    "version": "1.0.0",
+    "contact": {
+      "name": "CODENEX-AI-PROXY-API"
+    }
+  },
+  "servers": [
+    {
+      "url": "/",
+      "description": "Current server"
+    }
+  ],
+  "tags": [
+    {
+      "name": "OpenAI Compatible",
+      "description": "OpenAI-compatible API endpoints"
+    },
+    {
+      "name": "Claude Compatible",
+      "description": "Claude/Anthropic-compatible API endpoints"
+    },
+    {
+      "name": "Gemini Compatible",
+      "description": "Google Gemini-compatible API endpoints"
+    },
+    {
+      "name": "Health",
+      "description": "Health check endpoints"
+    },
+    {
+      "name": "Provider Management",
+      "description": "Provider pool management endpoints"
+    },
+    {
+      "name": "Configuration",
+      "description": "Server configuration endpoints"
+    },
+    {
+      "name": "Authentication",
+      "description": "Authentication and OAuth endpoints"
+    },
+    {
+      "name": "Usage",
+      "description": "Usage statistics endpoints"
+    },
+    {
+      "name": "Metrics",
+      "description": "Dashboard metrics and analytics endpoints"
+    },
+    {
+      "name": "Cache",
+      "description": "Response caching endpoints"
+    },
+    {
+      "name": "System",
+      "description": "System information endpoints"
+    }
+  ],
+  "paths": {
+    "/health": {
+      "get": {
+        "tags": [
+          "Health"
+        ],
+        "summary": "Health check",
+        "description": "Check if the API server is healthy and running",
+        "responses": {
+          "200": {
+            "description": "Server is healthy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "healthy"
+                    },
+                    "timestamp": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "provider": {
+                      "type": "string",
+                      "example": "gemini-cli-oauth"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/provider_health": {
+      "get": {
+        "tags": [
+          "Health"
+        ],
+        "summary": "Provider health status",
+        "description": "Get health status of all providers in the pool",
+        "parameters": [
+          {
+            "name": "provider",
+            "in": "query",
+            "description": "Filter by provider type",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "customName",
+            "in": "query",
+            "description": "Filter by custom name",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "unhealthRatioThreshold",
+            "in": "query",
+            "description": "Threshold for unhealthy ratio (default: 0.0001)",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Provider health status",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "timestamp": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "type": "object"
+                      }
+                    },
+                    "count": {
+                      "type": "integer"
+                    },
+                    "unhealthyCount": {
+                      "type": "integer"
+                    },
+                    "unhealthyRatio": {
+                      "type": "number"
+                    },
+                    "summaryHealth": {
+                      "type": "boolean"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/models": {
+      "get": {
+        "tags": [
+          "OpenAI Compatible"
+        ],
+        "summary": "List models (OpenAI format)",
+        "description": "Get list of available models in OpenAI format",
+        "security": [
+          {
+            "ApiKey": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of models",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "object": {
+                      "type": "string",
+                      "example": "list"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "object": {
+                            "type": "string",
+                            "example": "model"
+                          },
+                          "created": {
+                            "type": "integer"
+                          },
+                          "owned_by": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      }
+    },
+    "/v1/chat/completions": {
+      "post": {
+        "tags": [
+          "OpenAI Compatible"
+        ],
+        "summary": "Create chat completion",
+        "description": "Create a chat completion using OpenAI-compatible format. Works with any configured provider.",
+        "security": [
+          {
+            "ApiKey": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChatCompletionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Chat completion response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatCompletionResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      }
+    },
+    "/v1/responses": {
+      "post": {
+        "tags": [
+          "OpenAI Compatible"
+        ],
+        "summary": "Create response (OpenAI Responses API)",
+        "description": "Create a response using OpenAI Responses API format",
+        "security": [
+          {
+            "ApiKey": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "model",
+                  "input"
+                ],
+                "properties": {
+                  "model": {
+                    "type": "string"
+                  },
+                  "input": {
+                    "type": "string"
+                  },
+                  "max_output_tokens": {
+                    "type": "integer"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Response created"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      }
+    },
+    "/v1/messages": {
+      "post": {
+        "tags": [
+          "Claude Compatible"
+        ],
+        "summary": "Create message (Claude format)",
+        "description": "Create a message using Claude/Anthropic API format",
+        "security": [
+          {
+            "ApiKey": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ClaudeMessageRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Message response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClaudeMessageResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      }
+    },
+    "/v1beta/models": {
+      "get": {
+        "tags": [
+          "Gemini Compatible"
+        ],
+        "summary": "List models (Gemini format)",
+        "description": "Get list of available models in Gemini format",
+        "security": [
+          {
+            "ApiKey": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of models",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "models": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "name": {
+                            "type": "string"
+                          },
+                          "displayName": {
+                            "type": "string"
+                          },
+                          "description": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1beta/models/{model}:generateContent": {
+      "post": {
+        "tags": [
+          "Gemini Compatible"
+        ],
+        "summary": "Generate content (Gemini format)",
+        "description": "Generate content using Gemini API format",
+        "security": [
+          {
+            "ApiKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "model",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "gemini-2.0-flash-exp"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GeminiGenerateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Generated content"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      }
+    },
+    "/v1beta/models/{model}:streamGenerateContent": {
+      "post": {
+        "tags": [
+          "Gemini Compatible"
+        ],
+        "summary": "Stream generate content (Gemini format)",
+        "description": "Stream generate content using Gemini API format",
+        "security": [
+          {
+            "ApiKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "model",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GeminiGenerateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Streamed content"
+          }
+        }
+      }
+    },
+    "/{provider}/v1/chat/completions": {
+      "post": {
+        "tags": [
+          "OpenAI Compatible"
+        ],
+        "summary": "Chat completion with provider routing",
+        "description": "Create chat completion with explicit provider routing via URL path",
+        "security": [
+          {
+            "ApiKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "provider",
+            "in": "path",
+            "required": true,
+            "description": "Provider type",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "gemini-cli-oauth",
+                "gemini-antigravity",
+                "claude-custom",
+                "openai-custom",
+                "openaiResponses-custom",
+                "claudeCode-custom"
+              ]
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChatCompletionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Chat completion response"
+          }
+        }
+      }
+    },
+    "/{provider}/v1/messages": {
+      "post": {
+        "tags": [
+          "Claude Compatible"
+        ],
+        "summary": "Messages with provider routing",
+        "description": "Create message with explicit provider routing via URL path",
+        "security": [
+          {
+            "ApiKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "provider",
+            "in": "path",
+            "required": true,
+            "description": "Provider type",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "gemini-cli-oauth",
+                "gemini-antigravity",
+                "claude-custom",
+                "openai-custom",
+                "openaiResponses-custom",
+                "claudeCode-custom"
+              ]
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ClaudeMessageRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Message response"
+          }
+        }
+      }
+    },
+    "/api/login": {
+      "post": {
+        "tags": [
+          "Authentication"
+        ],
+        "summary": "Login to management console",
+        "description": "Authenticate to access the management console",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "password": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Login successful",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "token": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid credentials"
+          }
+        }
+      }
+    },
+    "/api/config": {
+      "get": {
+        "tags": [
+          "Configuration"
+        ],
+        "summary": "Get server configuration",
+        "description": "Get current server configuration",
+        "security": [
+          {
+            "ApiKey": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Server configuration",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServerConfig"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Configuration"
+        ],
+        "summary": "Update server configuration",
+        "description": "Update server configuration settings",
+        "security": [
+          {
+            "ApiKey": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ServerConfig"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Configuration updated"
+          }
+        }
+      }
+    },
+    "/api/system": {
+      "get": {
+        "tags": [
+          "System"
+        ],
+        "summary": "Get system information",
+        "description": "Get server system information including version, memory, CPU usage",
+        "security": [
+          {
+            "ApiKey": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "System information",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "appVersion": {
+                      "type": "string"
+                    },
+                    "nodeVersion": {
+                      "type": "string"
+                    },
+                    "serverTime": {
+                      "type": "string"
+                    },
+                    "uptime": {
+                      "type": "number"
+                    },
+                    "memoryUsage": {
+                      "type": "string"
+                    },
+                    "cpuUsage": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/service-mode": {
+      "get": {
+        "tags": [
+          "System"
+        ],
+        "summary": "Get service mode",
+        "description": "Get current service running mode (worker or standalone)",
+        "security": [
+          {
+            "ApiKey": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Service mode information",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "mode": {
+                      "type": "string",
+                      "enum": [
+                        "worker",
+                        "standalone"
+                      ]
+                    },
+                    "pid": {
+                      "type": "integer"
+                    },
+                    "platform": {
+                      "type": "string"
+                    },
+                    "canAutoRestart": {
+                      "type": "boolean"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/providers": {
+      "get": {
+        "tags": [
+          "Provider Management"
+        ],
+        "summary": "List all providers",
+        "description": "Get all configured provider pools and their status",
+        "security": [
+          {
+            "ApiKey": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Provider pools",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/ProviderConfig"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Provider Management"
+        ],
+        "summary": "Add new provider",
+        "description": "Add a new provider configuration to the pool",
+        "security": [
+          {
+            "ApiKey": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProviderConfig"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Provider added"
+          }
+        }
+      }
+    },
+    "/api/providers/{type}": {
+      "get": {
+        "tags": [
+          "Provider Management"
+        ],
+        "summary": "Get provider by type",
+        "description": "Get all providers of a specific type",
+        "security": [
+          {
+            "ApiKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "type",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Provider details"
+          }
+        }
+      }
+    },
+    "/api/providers/{type}/{uuid}": {
+      "put": {
+        "tags": [
+          "Provider Management"
+        ],
+        "summary": "Update provider",
+        "description": "Update a specific provider configuration",
+        "security": [
+          {
+            "ApiKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "type",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProviderConfig"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Provider updated"
+          }
+        }
+      }
+    },
+    "/api/providers/{type}/{uuid}/disable": {
+      "post": {
+        "tags": [
+          "Provider Management"
+        ],
+        "summary": "Disable provider",
+        "description": "Disable a specific provider",
+        "security": [
+          {
+            "ApiKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "type",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Provider disabled"
+          }
+        }
+      }
+    },
+    "/api/providers/{type}/{uuid}/enable": {
+      "post": {
+        "tags": [
+          "Provider Management"
+        ],
+        "summary": "Enable provider",
+        "description": "Enable a specific provider",
+        "security": [
+          {
+            "ApiKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "type",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Provider enabled"
+          }
+        }
+      }
+    },
+    "/api/providers/{type}/reset-health": {
+      "post": {
+        "tags": [
+          "Provider Management"
+        ],
+        "summary": "Reset provider health",
+        "description": "Reset health status for all providers of a type",
+        "security": [
+          {
+            "ApiKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "type",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Health reset"
+          }
+        }
+      }
+    },
+    "/api/providers/{type}/health-check": {
+      "post": {
+        "tags": [
+          "Provider Management"
+        ],
+        "summary": "Run health check",
+        "description": "Run health check for providers of a type",
+        "security": [
+          {
+            "ApiKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "type",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Health check results"
+          }
+        }
+      }
+    },
+    "/api/providers/{type}/generate-auth-url": {
+      "post": {
+        "tags": [
+          "Authentication"
+        ],
+        "summary": "Generate OAuth auth URL",
+        "description": "Generate OAuth authorization URL for a provider",
+        "security": [
+          {
+            "ApiKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "type",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "saveToConfigs": {
+                    "type": "boolean"
+                  },
+                  "providerDir": {
+                    "type": "string"
+                  },
+                  "method": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Auth URL generated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "authUrl": {
+                      "type": "string"
+                    },
+                    "authInfo": {
+                      "type": "object"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/provider-models": {
+      "get": {
+        "tags": [
+          "Provider Management"
+        ],
+        "summary": "Get all provider models",
+        "description": "Get available models for all providers",
+        "security": [
+          {
+            "ApiKey": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Provider models"
+          }
+        }
+      }
+    },
+    "/api/provider-models/{type}": {
+      "get": {
+        "tags": [
+          "Provider Management"
+        ],
+        "summary": "Get models for provider",
+        "description": "Get available models for a specific provider type",
+        "security": [
+          {
+            "ApiKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "type",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Provider models"
+          }
+        }
+      }
+    },
+    "/api/usage": {
+      "get": {
+        "tags": [
+          "Usage"
+        ],
+        "summary": "Get usage statistics",
+        "description": "Get usage statistics for all providers",
+        "security": [
+          {
+            "ApiKey": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Usage statistics"
+          }
+        }
+      }
+    },
+    "/api/usage/{type}": {
+      "get": {
+        "tags": [
+          "Usage"
+        ],
+        "summary": "Get usage for provider",
+        "description": "Get usage statistics for a specific provider type",
+        "security": [
+          {
+            "ApiKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "type",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Provider usage"
+          }
+        }
+      }
+    },
+    "/api/upload-configs": {
+      "get": {
+        "tags": [
+          "Configuration"
+        ],
+        "summary": "List uploaded configs",
+        "description": "Get list of all uploaded configuration files",
+        "security": [
+          {
+            "ApiKey": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Config file list"
+          }
+        }
+      }
+    },
+    "/api/upload-configs/view/{path}": {
+      "get": {
+        "tags": [
+          "Configuration"
+        ],
+        "summary": "View config file",
+        "description": "View contents of a configuration file",
+        "security": [
+          {
+            "ApiKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "path",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Config file contents"
+          }
+        }
+      }
+    },
+    "/api/upload-configs/delete/{path}": {
+      "delete": {
+        "tags": [
+          "Configuration"
+        ],
+        "summary": "Delete config file",
+        "description": "Delete a configuration file",
+        "security": [
+          {
+            "ApiKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "path",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Config deleted"
+          }
+        }
+      }
+    },
+    "/api/upload-configs/download-all": {
+      "get": {
+        "tags": [
+          "Configuration"
+        ],
+        "summary": "Download all configs",
+        "description": "Download all configuration files as a ZIP archive",
+        "security": [
+          {
+            "ApiKey": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ZIP file",
+            "content": {
+              "application/zip": {}
+            }
+          }
+        }
+      }
+    },
+    "/api/upload-oauth-credentials": {
+      "post": {
+        "tags": [
+          "Authentication"
+        ],
+        "summary": "Upload OAuth credentials",
+        "description": "Upload OAuth credentials file for a provider",
+        "security": [
+          {
+            "ApiKey": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary"
+                  },
+                  "provider": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "File uploaded"
+          }
+        }
+      }
+    },
+    "/api/quick-link-provider": {
+      "post": {
+        "tags": [
+          "Provider Management"
+        ],
+        "summary": "Quick link provider",
+        "description": "Quickly link an uploaded config to a provider pool",
+        "security": [
+          {
+            "ApiKey": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "filePath": {
+                    "type": "string"
+                  },
+                  "providerType": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Provider linked"
+          }
+        }
+      }
+    },
+    "/api/reload-config": {
+      "post": {
+        "tags": [
+          "System"
+        ],
+        "summary": "Reload configuration",
+        "description": "Reload server configuration from files",
+        "security": [
+          {
+            "ApiKey": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Configuration reloaded"
+          }
+        }
+      }
+    },
+    "/api/restart-service": {
+      "post": {
+        "tags": [
+          "System"
+        ],
+        "summary": "Restart service",
+        "description": "Restart the API server (worker mode only)",
+        "security": [
+          {
+            "ApiKey": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Service restart initiated"
+          }
+        }
+      }
+    },
+    "/api/admin-password": {
+      "post": {
+        "tags": [
+          "Authentication"
+        ],
+        "summary": "Update admin password",
+        "description": "Update the admin console password",
+        "security": [
+          {
+            "ApiKey": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "password": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Password updated"
+          }
+        }
+      }
+    },
+    "/api/events": {
+      "get": {
+        "tags": [
+          "System"
+        ],
+        "summary": "Server-Sent Events",
+        "description": "Subscribe to real-time server events (SSE)",
+        "responses": {
+          "200": {
+            "description": "SSE stream",
+            "content": {
+              "text/event-stream": {}
+            }
+          }
+        }
+      }
+    },
+    "/api/metrics/overview": {
+      "get": {
+        "tags": [
+          "Metrics"
+        ],
+        "summary": "Get metrics overview",
+        "description": "Get summary statistics for dashboard counter cards including total requests, success rate, average latency, active providers, total tokens, and cache hit rate",
+        "security": [
+          {
+            "ApiKey": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Metrics overview",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "totalRequests": {
+                      "type": "integer",
+                      "description": "Total requests in last 24 hours"
+                    },
+                    "successRate": {
+                      "type": "number",
+                      "description": "Success rate percentage"
+                    },
+                    "avgLatency": {
+                      "type": "integer",
+                      "description": "Average latency in milliseconds"
+                    },
+                    "activeProviders": {
+                      "type": "integer",
+                      "description": "Number of active providers"
+                    },
+                    "totalTokens": {
+                      "type": "integer",
+                      "description": "Total tokens used in last 24 hours"
+                    },
+                    "cacheHitRate": {
+                      "type": "number",
+                      "description": "Cache hit rate percentage"
+                    },
+                    "requestsTrend": {
+                      "type": "number",
+                      "description": "Requests trend percentage vs previous period"
+                    },
+                    "successTrend": {
+                      "type": "number",
+                      "description": "Success rate trend"
+                    },
+                    "latencyTrend": {
+                      "type": "number",
+                      "description": "Latency trend"
+                    },
+                    "tokensTrend": {
+                      "type": "number",
+                      "description": "Tokens trend"
+                    },
+                    "cacheTrend": {
+                      "type": "number",
+                      "description": "Cache hit rate trend"
+                    },
+                    "topModels": {
+                      "type": "object",
+                      "properties": {
+                        "labels": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "values": {
+                          "type": "array",
+                          "items": {
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/metrics/requests": {
+      "get": {
+        "tags": [
+          "Metrics"
+        ],
+        "summary": "Get request throughput data",
+        "description": "Get time series data for request throughput chart",
+        "security": [
+          {
+            "ApiKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "range",
+            "in": "query",
+            "description": "Time range (1h, 6h, 24h, 7d)",
+            "schema": {
+              "type": "string",
+              "default": "24h",
+              "enum": [
+                "1h",
+                "6h",
+                "24h",
+                "7d"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Request throughput data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "labels": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      },
+                      "description": "Time labels (ISO 8601)"
+                    },
+                    "values": {
+                      "type": "array",
+                      "items": {
+                        "type": "integer"
+                      },
+                      "description": "Request counts per interval"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/metrics/latency": {
+      "get": {
+        "tags": [
+          "Metrics"
+        ],
+        "summary": "Get latency data",
+        "description": "Get time series data for latency percentiles",
+        "security": [
+          {
+            "ApiKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "range",
+            "in": "query",
+            "description": "Time range (1h, 6h, 24h, 7d)",
+            "schema": {
+              "type": "string",
+              "default": "24h",
+              "enum": [
+                "1h",
+                "6h",
+                "24h",
+                "7d"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Latency data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "labels": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "p50": {
+                      "type": "array",
+                      "items": {
+                        "type": "number"
+                      }
+                    },
+                    "p95": {
+                      "type": "array",
+                      "items": {
+                        "type": "number"
+                      }
+                    },
+                    "p99": {
+                      "type": "array",
+                      "items": {
+                        "type": "number"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/metrics/errors": {
+      "get": {
+        "tags": [
+          "Metrics"
+        ],
+        "summary": "Get error rate data",
+        "description": "Get time series data for error rates by provider/model",
+        "security": [
+          {
+            "ApiKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "range",
+            "in": "query",
+            "description": "Time range (1h, 6h, 24h, 7d)",
+            "schema": {
+              "type": "string",
+              "default": "24h",
+              "enum": [
+                "1h",
+                "6h",
+                "24h",
+                "7d"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Error rate data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "labels": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "values": {
+                      "type": "array",
+                      "items": {
+                        "type": "number"
+                      },
+                      "description": "Error rate percentages"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/metrics/tokens": {
+      "get": {
+        "tags": [
+          "Metrics"
+        ],
+        "summary": "Get token usage data",
+        "description": "Get token usage breakdown by model over time",
+        "security": [
+          {
+            "ApiKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "range",
+            "in": "query",
+            "description": "Time range (1h, 6h, 24h, 7d)",
+            "schema": {
+              "type": "string",
+              "default": "24h",
+              "enum": [
+                "1h",
+                "6h",
+                "24h",
+                "7d"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Token usage data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "labels": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      },
+                      "description": "Time labels"
+                    },
+                    "datasets": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "label": {
+                            "type": "string",
+                            "description": "Model name"
+                          },
+                          "data": {
+                            "type": "array",
+                            "items": {
+                              "type": "integer"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/metrics/providers/health-timeline": {
+      "get": {
+        "tags": [
+          "Metrics"
+        ],
+        "summary": "Get provider health timeline",
+        "description": "Get health status timeline for all providers",
+        "security": [
+          {
+            "ApiKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "range",
+            "in": "query",
+            "description": "Time range (1h, 6h, 24h)",
+            "schema": {
+              "type": "string",
+              "default": "24h",
+              "enum": [
+                "1h",
+                "6h",
+                "24h"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Provider health timeline data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "providers": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "datasets": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "label": {
+                            "type": "string",
+                            "description": "Status type (Healthy, Degraded, Unhealthy)"
+                          },
+                          "data": {
+                            "type": "array",
+                            "items": {
+                              "type": "number"
+                            }
+                          },
+                          "backgroundColor": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/metrics/providers/load": {
+      "get": {
+        "tags": [
+          "Metrics"
+        ],
+        "summary": "Get provider load distribution",
+        "description": "Get request load distribution across providers",
+        "security": [
+          {
+            "ApiKey": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Provider load data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "labels": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      },
+                      "description": "Provider names"
+                    },
+                    "values": {
+                      "type": "array",
+                      "items": {
+                        "type": "number"
+                      },
+                      "description": "Request percentages"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/cache/stats": {
+      "get": {
+        "tags": [
+          "Cache"
+        ],
+        "summary": "Get cache statistics",
+        "description": "Get Redis cache hit/miss statistics",
+        "security": [
+          {
+            "ApiKey": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Cache statistics",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "enabled": {
+                      "type": "boolean",
+                      "description": "Whether caching is enabled"
+                    },
+                    "hits": {
+                      "type": "integer",
+                      "description": "Total cache hits"
+                    },
+                    "misses": {
+                      "type": "integer",
+                      "description": "Total cache misses"
+                    },
+                    "hitRate": {
+                      "type": "number",
+                      "description": "Cache hit rate percentage"
+                    },
+                    "size": {
+                      "type": "integer",
+                      "description": "Number of cached entries"
+                    },
+                    "memoryUsage": {
+                      "type": "string",
+                      "description": "Estimated memory usage"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/cache/clear": {
+      "post": {
+        "tags": [
+          "Cache"
+        ],
+        "summary": "Clear cache",
+        "description": "Clear all cached responses from Redis",
+        "security": [
+          {
+            "ApiKey": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Cache cleared",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "clearedCount": {
+                      "type": "integer",
+                      "description": "Number of entries cleared"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "ApiKey": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "API Key - Use the same key with any of these methods:\n• Bearer token: Authorization: Bearer YOUR_API_KEY (OpenAI style)\n• Header: x-api-key: YOUR_API_KEY (Claude style)\n• Header: x-goog-api-key: YOUR_API_KEY (Gemini style)\n• Query param: ?key=YOUR_API_KEY (Gemini style)"
+      }
+    },
+    "schemas": {
+      "ChatCompletionRequest": {
+        "type": "object",
+        "required": [
+          "model",
+          "messages"
+        ],
+        "properties": {
+          "model": {
+            "type": "string",
+            "example": "gemini-2.0-flash-exp"
+          },
+          "messages": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "role": {
+                  "type": "string",
+                  "enum": [
+                    "system",
+                    "user",
+                    "assistant"
+                  ]
+                },
+                "content": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "max_tokens": {
+            "type": "integer",
+            "example": 1000
+          },
+          "temperature": {
+            "type": "number",
+            "example": 0.7
+          },
+          "stream": {
+            "type": "boolean",
+            "default": false
+          }
+        }
+      },
+      "ChatCompletionResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "object": {
+            "type": "string",
+            "example": "chat.completion"
+          },
+          "created": {
+            "type": "integer"
+          },
+          "model": {
+            "type": "string"
+          },
+          "choices": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "index": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "object",
+                  "properties": {
+                    "role": {
+                      "type": "string"
+                    },
+                    "content": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "finish_reason": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "usage": {
+            "type": "object",
+            "properties": {
+              "prompt_tokens": {
+                "type": "integer"
+              },
+              "completion_tokens": {
+                "type": "integer"
+              },
+              "total_tokens": {
+                "type": "integer"
+              }
+            }
+          }
+        }
+      },
+      "ClaudeMessageRequest": {
+        "type": "object",
+        "required": [
+          "model",
+          "messages",
+          "max_tokens"
+        ],
+        "properties": {
+          "model": {
+            "type": "string",
+            "example": "claude-3-5-sonnet-20241022"
+          },
+          "messages": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "role": {
+                  "type": "string",
+                  "enum": [
+                    "user",
+                    "assistant"
+                  ]
+                },
+                "content": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "max_tokens": {
+            "type": "integer",
+            "example": 1000
+          },
+          "system": {
+            "type": "string"
+          },
+          "stream": {
+            "type": "boolean",
+            "default": false
+          }
+        }
+      },
+      "ClaudeMessageResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "example": "message"
+          },
+          "role": {
+            "type": "string",
+            "example": "assistant"
+          },
+          "content": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "type": "string"
+                },
+                "text": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "model": {
+            "type": "string"
+          },
+          "stop_reason": {
+            "type": "string"
+          },
+          "usage": {
+            "type": "object",
+            "properties": {
+              "input_tokens": {
+                "type": "integer"
+              },
+              "output_tokens": {
+                "type": "integer"
+              }
+            }
+          }
+        }
+      },
+      "GeminiGenerateRequest": {
+        "type": "object",
+        "required": [
+          "contents"
+        ],
+        "properties": {
+          "contents": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "role": {
+                  "type": "string"
+                },
+                "parts": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "text": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "generationConfig": {
+            "type": "object",
+            "properties": {
+              "maxOutputTokens": {
+                "type": "integer"
+              },
+              "temperature": {
+                "type": "number"
+              }
+            }
+          }
+        }
+      },
+      "ServerConfig": {
+        "type": "object",
+        "properties": {
+          "REQUIRED_API_KEY": {
+            "type": "string"
+          },
+          "HOST": {
+            "type": "string"
+          },
+          "SERVER_PORT": {
+            "type": "integer"
+          },
+          "MODEL_PROVIDER": {
+            "type": "string"
+          },
+          "PROJECT_ID": {
+            "type": "string"
+          },
+          "OPENAI_API_KEY": {
+            "type": "string"
+          },
+          "OPENAI_BASE_URL": {
+            "type": "string"
+          },
+          "CLAUDE_API_KEY": {
+            "type": "string"
+          },
+          "CLAUDE_BASE_URL": {
+            "type": "string"
+          },
+          "PROVIDER_POOLS_FILE_PATH": {
+            "type": "string"
+          },
+          "MAX_ERROR_COUNT": {
+            "type": "integer"
+          },
+          "HEALTH_CHECK_INTERVAL_HOURS": {
+            "type": "number"
+          }
+        }
+      },
+      "ProviderConfig": {
+        "type": "object",
+        "properties": {
+          "uuid": {
+            "type": "string"
+          },
+          "customName": {
+            "type": "string"
+          },
+          "isHealthy": {
+            "type": "boolean"
+          },
+          "isDisabled": {
+            "type": "boolean"
+          },
+          "usageCount": {
+            "type": "integer"
+          },
+          "errorCount": {
+            "type": "integer"
+          },
+          "lastErrorTime": {
+            "type": "string"
+          },
+          "lastErrorMessage": {
+            "type": "string"
+          },
+          "checkModel": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "responses": {
+      "Unauthorized": {
+        "description": "Unauthorized - API key is invalid or missing",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "error": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

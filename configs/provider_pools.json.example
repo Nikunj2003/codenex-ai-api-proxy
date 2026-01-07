@@ -1,0 +1,48 @@
+{
+  "gemini-cli-oauth": [
+    {
+      "GEMINI_OAUTH_CREDS_FILE_PATH": "./configs/gemini/oauth_creds.json",
+      "uuid": "example-uuid-1",
+      "checkModelName": "gemini-2.5-flash",
+      "checkHealth": false,
+      "isHealthy": true,
+      "isDisabled": false,
+      "lastUsed": null,
+      "usageCount": 0,
+      "errorCount": 0,
+      "lastErrorTime": null,
+      "lastHealthCheckTime": null,
+      "lastHealthCheckModel": null,
+      "lastErrorMessage": null,
+      "PROJECT_ID": "",
+      "lastErrorStatusCode": null,
+      "quickRetryCount": 0,
+      "quickRetryPhaseStartTime": null,
+      "lastQuickRetryTime": null,
+      "healthCheckScheduleType": null
+    }
+  ],
+  "gemini-antigravity": [
+    {
+      "ANTIGRAVITY_OAUTH_CREDS_FILE_PATH": "./configs/antigravity/oauth_creds.json",
+      "uuid": "example-uuid-2",
+      "checkModelName": "gemini-2.5-computer-use-preview-10-2025",
+      "checkHealth": false,
+      "isHealthy": true,
+      "isDisabled": false,
+      "lastUsed": null,
+      "usageCount": 0,
+      "errorCount": 0,
+      "lastErrorTime": null,
+      "lastHealthCheckTime": null,
+      "lastHealthCheckModel": null,
+      "lastErrorMessage": null,
+      "PROJECT_ID": "",
+      "lastErrorStatusCode": null,
+      "quickRetryCount": 0,
+      "quickRetryPhaseStartTime": null,
+      "lastQuickRetryTime": null,
+      "healthCheckScheduleType": null
+    }
+  ]
+}

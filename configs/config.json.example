@@ -1,0 +1,30 @@
+{
+  "REQUIRED_API_KEY": "sk-1234567890",
+  "SERVER_PORT": 3000,
+  "HOST": "0.0.0.0",
+  "MODEL_PROVIDER": "gemini-cli-oauth",
+  "PROJECT_ID": "",
+  "GEMINI_OAUTH_CREDS_BASE64": null,
+  "GEMINI_OAUTH_CREDS_FILE_PATH": "",
+  "GEMINI_BASE_URL": "https://cloudcode-pa.googleapis.com",
+  "SYSTEM_PROMPT_FILE_PATH": "configs/input_system_prompt.txt",
+  "SYSTEM_PROMPT_MODE": "append",
+  "PROMPT_LOG_BASE_NAME": "prompt_log",
+  "PROMPT_LOG_MODE": "none",
+  "REQUEST_MAX_RETRIES": 3,
+  "REQUEST_BASE_DELAY": 1000,
+  "CRON_NEAR_MINUTES": 15,
+  "CRON_REFRESH_TOKEN": true,
+  "PROVIDER_POOLS_FILE_PATH": "configs/provider_pools.json",
+  "MAX_ERROR_COUNT": 3,
+  "HEALTH_CHECK_INTERVAL_HOURS": 1,
+  "providerFallbackChain": {
+    "gemini-cli-oauth": ["gemini-antigravity"],
+    "gemini-antigravity": ["gemini-cli-oauth"]
+  },
+  "QUICK_RETRY_INTERVAL_SECONDS": 10,
+  "QUICK_RETRY_MAX_COUNT": 3,
+  "RATE_LIMIT_CHECK_INTERVAL_HOURS": 3,
+  "STANDARD_CHECK_INTERVAL_HOURS": 3,
+  "AUTO_HEALTH_CHECK_ENABLED": true
+}
